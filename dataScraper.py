@@ -6,7 +6,8 @@
 
 import json
 import pandas as pd
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt # PYPLOT
+import plotly.graph_objects as go # PLOTLY
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 import numpy as np
@@ -14,6 +15,8 @@ import matplotlib.dates as mdates
 import requests
 from dotenv import load_dotenv
 import os
+import plotly.io as pio # PLOTLY
+pio.renderers.default = 'browser' # PLOTLY
 
 load_dotenv()
 url = "https://app.dreaming.com/.netlify/functions/dayWatchedTime?language=es"
@@ -25,6 +28,8 @@ response = requests.get(url, headers=headers)
 
 data = response.json()
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+save_path = os.path.join(script_dir, 'Dreaming Spanish Hours Chart.png')
 
 
 # with open('ds_raw.txt') as f:
@@ -43,45 +48,117 @@ totalHours = df['totalHours']
 
 # Now the dataframe is ready
 
-milestones = {50: "r", 150: "purple", 300: "blue", 600: "cyan", 1000: "green", 1500: "g" }
+milestones = {50: "red", 150: "purple", 300: "blue", 600: "cyan", 1000: "green", 1500: "green" }
 
-#%% Plot
+#%% Plot - Plotly
 
-plt.figure(figsize=(30, 5))
-plt.plot(date,totalHours,linewidth = 2,color = 'k')
-# plt.xticks(rotation=45, ha='right')
-plt.title('Spanish Progress Tracking')
-plt.ylabel('Hours')
-plt.xlabel('Date')
-plt.ylim([0, 2000])
-plt.xlim([date.iloc[0], date.iloc[-1]])
-plt.fill_between(date, totalHours, alpha=0.1, color="black")
+fig = go.Figure()
 
-ax = plt.gca()
-ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d/%y"))
+# Main line
+fig.add_trace(go.Scatter(
+    x=date,
+    y=totalHours,
+    mode='lines',
+    line=dict(color='black', width=2),
+    fill='tozeroy',
+    fillcolor='rgba(0,0,0,0.1)',
+    name='Hours'
+))
 
+# Milestone horizontal lines + labels
 for y, color in milestones.items():
-    plt.axhline(y=y, color=color, linestyle='--',alpha=.2)
-    plt.text(date.iloc[0], y+10, f"{y} hrs", color=color, fontsize=8)
-    
+    fig.add_hline(
+        y=y,
+        line=dict(color=color, dash='dash', width=1),
+        opacity=0.3
+    )
+    fig.add_annotation(
+        x=date.iloc[0],
+        y=y + 10,
+        text=f"{y} hrs",
+        showarrow=False,
+        font=dict(color=color, size=8),
+        xanchor='left'
+    )
+
+# Milestone crossing date annotations
 for y, color in milestones.items():
     subset = df[df["totalHours"] >= y]
     if subset.empty:
         continue
     crossed = subset.iloc[0]
-    plt.annotate(crossed["date"].strftime("%b %d %Y"), xy=(crossed["date"], y+65), fontsize=8, color=color, rotation=20)
+    fig.add_annotation(
+        x=crossed["date"],
+        y=y + 65,
+        text=crossed["date"].strftime("%b %d %Y"),
+        showarrow=False,
+        font=dict(color=color, size=8),
+        textangle=-20,
+        xanchor='left'
+    )
+
+fig.update_layout(
+    title='Spanish Progress Tracking',
+    xaxis_title='Date',
+    yaxis_title='Hours',
+    yaxis=dict(range=[0, 2000]),
+    xaxis=dict(
+        range=[date.iloc[0], date.iloc[-1]],
+        tickformat="%m/%d/%y",
+        dtick="M2"
+    ),
+    width=1400,
+    height=400,
+    plot_bgcolor='white',
+    showlegend=False
+)
 
 
 
-#%% Save Plot
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
-save_path = os.path.join(script_dir, 'Dreaming Spanish Hours Chart.png')
-plt.savefig(save_path, dpi=150, bbox_inches='tight', facecolor='white')
+fig.write_image(save_path, scale=1.5)
 print(f"Plot saved to {save_path}")
 print(f'Current hours: {totalHours.iloc[-1]}')
-plt.show()
+fig.show()
+
+
+
+#%% Plot - Matplotlib
+# =============================================================================
+# 
+# plt.figure(figsize=(30, 5))
+# plt.plot(date,totalHours,linewidth = 2,color = 'k')
+# # plt.xticks(rotation=45, ha='right')
+# plt.title('Spanish Progress Tracking')
+# plt.ylabel('Hours')
+# plt.xlabel('Date')
+# plt.ylim([0, 2000])
+# plt.xlim([date.iloc[0], date.iloc[-1]])
+# plt.fill_between(date, totalHours, alpha=0.1, color="black")
+# 
+# ax = plt.gca()
+# ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+# ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d/%y"))
+# 
+# for y, color in milestones.items():
+#     plt.axhline(y=y, color=color, linestyle='--',alpha=.2)
+#     plt.text(date.iloc[0], y+10, f"{y} hrs", color=color, fontsize=8)
+#     
+# for y, color in milestones.items():
+#     subset = df[df["totalHours"] >= y]
+#     if subset.empty:
+#         continue
+#     crossed = subset.iloc[0]
+#     plt.annotate(crossed["date"].strftime("%b %d %Y"), xy=(crossed["date"], y+65), fontsize=8, color=color, rotation=20)
+# 
+# 
+# 
+# # Save Plot
+# 
+# plt.savefig(save_path, dpi=150, bbox_inches='tight', facecolor='white')
+# print(f"Plot saved to {save_path}")
+# print(f'Current hours: {totalHours.iloc[-1]}')
+# plt.show()
+# =============================================================================
 
 #%% =============================================================================
 # Turn to CSV
