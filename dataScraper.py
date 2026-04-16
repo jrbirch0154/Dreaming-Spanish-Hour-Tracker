@@ -73,6 +73,17 @@ for y, color in milestones.items():
     plt.annotate(crossed["date"].strftime("%b %d %Y"), xy=(crossed["date"], y+65), fontsize=8, color=color, rotation=20)
 
 
+
+#%% Save Plot
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+save_path = os.path.join(script_dir, 'Dreaming Spanish Hours Chart.png')
+plt.savefig(save_path, dpi=150, bbox_inches='tight', facecolor='white')
+plt.show()
+
+
+input('debug...')
+
 # =============================================================================
 # #%% Rolling average
 # 
