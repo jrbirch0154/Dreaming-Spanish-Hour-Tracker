@@ -79,10 +79,17 @@ for y, color in milestones.items():
 script_dir = os.path.dirname(os.path.abspath(__file__))
 save_path = os.path.join(script_dir, 'Dreaming Spanish Hours Chart.png')
 plt.savefig(save_path, dpi=150, bbox_inches='tight', facecolor='white')
+print(f"Plot saved to {save_path}")
+print(f'Current hours: {totalHours.iloc[-1]}')
 plt.show()
 
+#%% =============================================================================
+# Turn to CSV
+df.to_csv("raw_data.csv", index=False)
+# =============================================================================
 
-input('debug...')
+
+# input('debug...')
 
 # =============================================================================
 # #%% Rolling average
@@ -132,7 +139,3 @@ input('debug...')
 
 
 
-#%% =============================================================================
-# Turn to CSV
-# # df.to_csv("raw_data.csv", index=False)
-# =============================================================================
